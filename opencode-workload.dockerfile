@@ -2,7 +2,7 @@
 # and the opencode install; the build re-pins opencode to the release this
 # kit publishes, so the provide cannot claim a version the image does not
 # ship.
-FROM dhi.io/sbx-templates:opencode-docker
+FROM docker/sandbox-templates:shell-docker
 ARG OPENCODE_VERSION
 # Root, and fatal: a failed re-pin must fail the build rather than let
 # the kit publish a version the template's older binary does not ship.
