@@ -1,0 +1,191 @@
+# syntax=docker/sandbox-kit:3
+# OpenCode as a WORKLOAD, migrated from the built-in v2 opencode kit: the
+# template image as content with opencode re-pinned, optional
+# provider credentials, the broad egress the multi-provider agent needs, and
+# the MCP seed.
+schemaVersion: "3"
+displayName: OpenCode
+author: "Docker, Inc."
+description: >-
+  OpenCode as a complete workload: the sandbox-templates base with
+  opencode pinned to the published release, seven optional proxy-managed
+  provider credentials, scoped egress, and the MCP seed.
+sourceUrl: https://github.com/sst/opencode
+
+kind: workload
+
+args:
+  version:
+    default: "2.0.22"
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    description: OpenCode release to install
+    buildArg: OPENCODE_VERSION
+
+provides: ["opencode@${{ kit.args.version }}"]
+
+dockerfile: ./opencode-workload.dockerfile
+
+capabilities:
+  # This workload is an agent sandbox: the host launches the agent rather
+  # than running the image's entrypoint as PID 1, and honors the identity
+  # the image config declares instead of assuming one.
+  - type: com.docker.sandbox/sbx@1
+
+  # Keep running even when nothing attached
+  - type: com.docker.sandbox/long-running@1
+
+  # Publish container port
+  - type: com.docker.sandbox/port@1
+    config:
+      name: opencode-web
+      container: 4096
+      transport: tcp
+
+  # Global OpenCode configuration shared by every sandbox created from
+  # this Kit.
+  - type: com.docker.sandbox/host-mount@1
+    config:
+      path: /home/agent/.config/opencode
+      mode: "0755"
+
+  # Private persistent OpenCode application state for each sandbox.
+  - type: com.docker.sandbox/volume@1
+    config:
+      path: /home/agent/.local/share/opencode
+      size: 2g
+      mode: "0755"
+
+  # Every domain a credential injects into and the non-credential domains opencode needs (its
+  # site/config schema, npm for MCP/plugin installs, GitHub release assets
+  # for LSP auto-install — the githubusercontent zone via the documented
+  # single-label wildcard, since assets 302 to its subdomains), and the template's apt
+  # mirrors (a workload owns its base).
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - api.github.com:443
+          - github.com:443
+          - "*.githubusercontent.com:443"
+          - raw.githubusercontent.com:443
+          - codeload.github.com:443
+          - openrouter.ai:443
+          - registry.npmjs.org:443
+          - opencode.ai:443
+          - "*.opencode.ai:443"
+          - archive.ubuntu.com:80
+          - security.ubuntu.com:80
+          - ports.ubuntu.com:80
+          - api.exa.ai
+          - mcp.exa.ai
+          - mcp.context7.com
+          - download.docker.com:443
+          - nodejs.org
+          - registry.yarnpkg.com
+          - json.schemastore.org
+          - pypi.org
+          - files.pythonhosted.org
+          - models.dev
+          - 192.168.2.86:11434
+          - 192.168.2.86:8188
+          - "*.thefiftyacres.com:443"
+  # Multi-provider credentials, each optional and proxy-managed where a
+  # well-known env var exists. one auth format per service, Bearer throughout.
+  - type: com.docker.sandbox/credential@1
+    optional: true
+    description: GitHub access
+    config:
+      service: github
+      phase: runtime
+      apiKey:
+        # Named deliberately (v2 was inject-only): GITHUB_TOKEN is the
+        # spelling gh and git tooling read natively, so the sentinel
+        # doubles as ambient auth at the allowed hosts.
+        name: GITHUB_TOKEN
+        proxyManaged: true
+        inject:
+          - {domain: api.github.com, header: Authorization, format: "Bearer %s"}
+          - {domain: github.com, header: Authorization, format: "Bearer %s"}
+          - {domain: raw.githubusercontent.com, header: Authorization, format: "Bearer %s"}
+  - type: com.docker.sandbox/credential@1
+    optional: true
+    description: OpenRouter API access
+    config:
+      service: openrouter
+      phase: runtime
+      apiKey:
+        name: OPENROUTER_API_KEY
+        proxyManaged: true
+        inject:
+          - {domain: openrouter.ai, header: Authorization, format: "Bearer %s"}
+  - type: com.docker.sandbox/credential@1
+    optional: true
+    config:
+      service: exa
+      phase: runtime
+      apiKey:
+        name: EXA_API_KEY
+        proxyManaged: true
+        inject:
+          - domain: api.exa.ai
+            header: x-api-key
+            format: "%s"
+          - domain: mcp.exa.ai
+            header: x-api-key
+            format: "%s"
+  - type: com.docker.sandbox/credential@1
+    optional: true
+    config:
+      service: context7
+      phase: runtime
+      apiKey:
+        name: CONTEXT7_API_KEY
+        proxyManaged: true
+        inject:
+          - domain: mcp.context7.com
+            header: Authorization
+            format: "Bearer %s"
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      startup:
+        # Gateway-first MCP registration, merged with jq rather than
+        # overwritten: startup runs on every boot, and opencode.json is
+        # the agent's main config, so truncating it would delete user
+        # settings and other MCP servers. Deep merge updates only the
+        # mcp.mcp-gateway entry; write-temp + rename keeps a crash from
+        # leaving a half-written file. No-op when MCP isn't enabled.
+        - command: |
+            set -e
+            [ -n "$MCP_GATEWAY_URL" ] || exit 0
+            mkdir -p "$HOME/.config/opencode"
+            cfg="$HOME/.config/opencode/opencode.json"
+            frag=/tmp/sandbox-mcp-gateway.json
+            jq -n --arg url "$MCP_GATEWAY_URL" --arg auth "Bearer $MCP_SENTINEL_TOKEN_NAME" \
+              '{"$schema": "https://opencode.ai/config.json", mcp: {"mcp-gateway": {type: "remote", url: $url, enabled: true, headers: {Authorization: $auth}}}}' > "$frag"
+            [ -f "$cfg" ] || echo '{}' > "$cfg"
+            jq -s '.[0] * .[1]' "$cfg" "$frag" > "$cfg.tmp"
+            mv "$cfg.tmp" "$cfg"
+            rm -f "$frag"
+          user: agent
+          env: [MCP_GATEWAY_URL, MCP_SENTINEL_TOKEN_NAME]
+          description: Register the sandbox MCP gateway by merging into opencode.json
+
+  # Where opencode reads shared skills, so the host's store reaches it.
+  # The runtime also exposes selected agent-skill@1 bundles here, even
+  # when host sharing is off or the user has no host skills.
+  - type: com.docker.sandbox/agent-skills@1
+    optional: true
+    config:
+      path: /home/agent/.config/opencode/skills
+
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      filename: AGENTS.md
+      directory: /home/agent/.config/opencode
+      contentFile: ./opencode-context.md
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      filename: opencode.json
+      contentFile: ./opencode.json
+      directory: /home/agent/.config/opencode
+
