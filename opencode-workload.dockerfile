@@ -7,7 +7,7 @@ ARG OPENCODE_VERSION
 # Root, and fatal: a failed re-pin must fail the build rather than let
 # the kit publish a version the template's older binary does not ship.
 USER root
-RUN npm install -g "opencode-ai@${OPENCODE_VERSION}" \
+RUN npm install -g "@opencode/cli@${OPENCODE_VERSION}" \
  && opencode --version \
  && mkdir -p /usr/share/opencode
 
