@@ -1,0 +1,83 @@
+{
+  "username": "liz",
+  "shell": "/bin/bash",
+  "model": "ollama/qwen3.6:32k",
+  "formatter": true,
+  "mcp": {
+    "servers": {
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp",
+        "oauth": false,
+        "headers": {
+            "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+        }
+      }
+    }
+  },
+  "websearch": {
+    "provider": "exa"
+  },
+  "compaction": {
+    "auto": true,
+    "keep": {
+      "tokens": 15000
+    },
+    "buffer": 8000
+  },
+  "providers": {
+    "ollama": {
+      "settings": {
+        "baseURL": "http://192.168.2.86:11434"
+      }
+    }
+  },
+  "permissions": [
+    { "action": "subagent", "resource": "*", "effect": "deny" },
+    { "action": "edit", "resource": "*", "effect": "deny" },
+    { "action": "shell", "resource": "*", "effect": "allow" },
+    { "action": "execute", "resource": "*", "effect": "allow" },
+    { "action": "question", "resource": "*", "effect": "allow" }
+  ],
+  "default_agent": "architect",
+  "agent": {
+    "architect": {
+      "mode": "primary",
+      "prompt": "{file:agents/architect.md}",
+      "permissions": [
+        { "action": "subagent", "resource": "test-writer", "effect": "allow" },
+        { "action": "subagent", "resource": "implementer", "effect": "allow" },
+        { "action": "subagent", "resource": "reviewer", "effect": "allow" },
+        { "action": "edit", "resource": "*", "effect": "deny" }
+      ]
+    },
+    "test-writer": {
+      "mode": "subagent",
+      "prompt": "{file:agents/test-writer.md}",
+      "permissions": [
+        { "action": "edit", "resource": "backend/tests/**", "effect": "allow" },
+        { "action": "edit", "resource": "frontend/tests/**", "effect": "allow" },
+        { "action": "subagent", "resource": "*", "effect": "deny" }
+      ]
+    },
+    "implementer": {
+      "mode": "subagent",
+      "prompt": "{file:agents/implementer.md}",
+      "permissions": [
+        { "action": "edit", "resource": "backend/**", "effect": "allow" },
+        { "action": "edit", "resource": "frontend/**", "effect": "allow" },
+        { "action": "edit", "resource": "backend/tests/**", "effect": "deny" },
+        { "action": "edit", "resource": "frontend/tests/**", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" }
+      ]
+    },
+    "reviewer": {
+      "mode": "subagent",
+      "prompt": "{file:agents/reviewer.md}",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" }
+      ]
+    }
+  }
+}
