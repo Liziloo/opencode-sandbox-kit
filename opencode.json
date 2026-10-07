@@ -27,9 +27,7 @@
   },
   "providers": {
     "ollama": {
-      "settings": {
-        "baseURL": "http://192.168.2.86:11434"
-      }
+      "settings": {}
     }
   },
   "permissions": [
