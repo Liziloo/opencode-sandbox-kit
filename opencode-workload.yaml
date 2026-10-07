@@ -54,7 +54,13 @@ capabilities:
     config:
       path: /home/agent/.local/share/opencode
       size: 2g
-      mode: "0755"
+      mode: "0777"
+
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        - command: chown 1000:1000 /home/agent/.local/share/opencode
+          user: "0"
 
   # Every domain a credential injects into and the non-credential domains opencode needs (its
   # site/config schema, npm for MCP/plugin installs, GitHub release assets
@@ -88,100 +94,6 @@ capabilities:
           - files.pythonhosted.org
           - models.dev
           - localhost:11434
-  # Multi-provider credentials, each optional and proxy-managed where a
-  # well-known env var exists. one auth format per service, Bearer throughout.
-  - type: com.docker.sandbox/credential@1
-    optional: true
-    description: GitHub access
-    config:
-      service: github
-      phase: runtime
-      apiKey:
-        # Named deliberately (v2 was inject-only): GITHUB_TOKEN is the
-        # spelling gh and git tooling read natively, so the sentinel
-        # doubles as ambient auth at the allowed hosts.
-        name: GITHUB_TOKEN
-        proxyManaged: true
-        inject:
-          - {domain: api.github.com, header: Authorization, format: "Bearer %s"}
-          - {domain: github.com, header: Authorization, format: "Bearer %s"}
-          - {domain: raw.githubusercontent.com, header: Authorization, format: "Bearer %s"}
-  - type: com.docker.sandbox/credential@1
-    optional: true
-    description: OpenRouter API access
-    config:
-      service: openrouter
-      phase: runtime
-      apiKey:
-        name: OPENROUTER_API_KEY
-        proxyManaged: true
-        inject:
-          - {domain: openrouter.ai, header: Authorization, format: "Bearer %s"}
-  - type: com.docker.sandbox/credential@1
-    optional: true
-    config:
-      service: exa
-      phase: runtime
-      apiKey:
-        name: EXA_API_KEY
-        proxyManaged: true
-        inject:
-          - domain: api.exa.ai
-            header: x-api-key
-            format: "%s"
-          - domain: mcp.exa.ai
-            header: x-api-key
-            format: "%s"
-  - type: com.docker.sandbox/credential@1
-    optional: true
-    config:
-      service: context7
-      phase: runtime
-      apiKey:
-        name: CONTEXT7_API_KEY
-        proxyManaged: true
-        inject:
-          - domain: mcp.context7.com
-            header: Authorization
-            format: "Bearer %s"
-
-  - type: com.docker.sandbox/lifecycle@1
-    config:
-      startup:
-        # Register the sandbox MCP gateway by merging its configuration
-        # into the existing OpenCode configuration. The existing config is
-        # preserved, including user settings and other MCP servers.
-        - command: |
-            set -e
-            mkdir -p "$HOME/.config/opencode"
-            cp /usr/share/opencode/opencode.json "$HOME/.config/opencode/opencode.json"
-            cfg="$HOME/.config/opencode/opencode.json"
-            frag=/tmp/sandbox-mcp-gateway.json
-
-            jq -n \
-              --arg url "$MCP_GATEWAY_URL" \
-              --arg auth "Bearer $MCP_SENTINEL_TOKEN_NAME" \
-              '{
-                mcp: {
-                  "mcp-gateway": {
-                    type: "remote",
-                    url: $url,
-                    enabled: true,
-                    headers: {
-                      Authorization: $auth
-                    }
-                  }
-                }
-              }' > "$frag"
-
-            jq -s '.[0] * .[1]' "$cfg" "$frag" > "$cfg.tmp"
-            mv "$cfg.tmp" "$cfg"
-            rm -f "$frag"
-          user: agent
-          env:
-            - MCP_GATEWAY_URL
-            - MCP_SENTINEL_TOKEN_NAME
-          description: Register the sandbox MCP gateway
 
   # Where opencode reads shared skills, so the host's store reaches it.
   # The runtime also exposes selected agent-skill@1 bundles here, even
@@ -194,5 +106,4 @@ capabilities:
   - type: com.docker.sandbox/agent-context@1
     config:
       filename: AGENTS.md
-      directory: /home/agent/.config/opencode
       contentFile: ./opencode-context.md
