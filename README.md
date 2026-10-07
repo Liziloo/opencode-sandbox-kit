@@ -189,16 +189,16 @@ capabilities:
     config:
       runtime:
         allow:
-          - 192.168.2.86:8188
+          - 192.168.1.100:8188
           - "*.example.com:443"
 ```
 
 Replace the example entries with the services you actually want OpenCode to reach.
 
-For example, a local service listening on port `8080` at `192.168.1.50` could be added as:
+For example, a local service listening on port `8080` at `192.168.1.100:8080` could be added as:
 
 ```yaml
-          - 192.168.1.50:8080
+          - 192.168.1.100:8080
 ```
 
 A specific HTTPS host could be added as:
