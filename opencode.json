@@ -1,5 +1,5 @@
 {
-  "username": "liz",
+  "$schema": "https://opencode.ai/config.json",
   "shell": "/bin/bash",
   "model": "ollama/qwen3.6:32k",
   "formatter": true,

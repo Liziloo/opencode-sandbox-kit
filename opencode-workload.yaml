@@ -154,10 +154,9 @@ capabilities:
         - command: |
             set -e
             mkdir -p "$HOME/.config/opencode"
+            cp /usr/share/opencode/opencode.json "$HOME/.config/opencode/opencode.json"
             cfg="$HOME/.config/opencode/opencode.json"
             frag=/tmp/sandbox-mcp-gateway.json
-
-            [ -f "$cfg" ] || echo '{}' > "$cfg"
 
             jq -n \
               --arg url "$MCP_GATEWAY_URL" \
@@ -197,9 +196,3 @@ capabilities:
       filename: AGENTS.md
       directory: /home/agent/.config/opencode
       contentFile: ./opencode-context.md
-  - type: com.docker.sandbox/agent-context@1
-    config:
-      filename: opencode.json
-      contentFile: ./opencode.json
-      directory: /home/agent/.config/opencode
-

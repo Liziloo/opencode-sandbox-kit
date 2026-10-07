@@ -8,7 +8,11 @@ ARG OPENCODE_VERSION
 # the kit publish a version the template's older binary does not ship.
 USER root
 RUN npm install -g "opencode-ai@${OPENCODE_VERSION}" \
- && opencode --version
+ && opencode --version \
+ && mkdir -p /usr/share/opencode
+
+COPY opencode.json /usr/share/opencode/opencode.json
+
 USER agent
 WORKDIR /home/agent/workspace
 # v2's sandbox.entrypoint.
