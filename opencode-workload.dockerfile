@@ -10,6 +10,9 @@ USER root
 RUN npm install -g --force "@opencode/cli@${OPENCODE_VERSION}" \
  && opencode --version
 
+COPY opencode.json /home/agent/.config/opencode/opencode.json
+RUN chown 1000:1000 /home/agent/.config/opencode/opencode.json
+
 USER agent
 WORKDIR /home/agent/workspace
 # v2's sandbox.entrypoint.
