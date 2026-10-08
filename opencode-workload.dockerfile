@@ -11,7 +11,10 @@ RUN npm install -g --force "@opencode/cli@${OPENCODE_VERSION}" \
  && opencode --version
 
 COPY opencode.json /home/agent/.config/opencode/opencode.json
+COPY agents /home/agent/.config/opencode/agents
+
 RUN chown 1000:1000 /home/agent/.config/opencode/opencode.json
+RUN chown -R 1000:1000 /home/agent/.config/opencode/agents
 
 USER agent
 WORKDIR /home/agent/workspace
