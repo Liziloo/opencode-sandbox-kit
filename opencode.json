@@ -48,64 +48,115 @@
     "build": {
       "disable": true
     },
-    "plan": {"disable": true},
-    "explore": {"disable": true},
-    "general": {"disable": true},
+    "plan": {
+      "disable": true
+    },
+    "explore": {
+      "disable": true
+    },
+    "general": {
+      "disable": true
+    },
+
     "architect": {
       "mode": "primary",
       "prompt": "{file:agents/architect.md}",
-      "permissions": [
-        { "action": "question", "resource": "*", "effect": "allow" },
-        { "action": "subagent", "resource": "*", "effect": "deny" },
-        { "action": "execute", "resource": "*", "effect": "allow" },
-        { "action": "shell", "resource": "*", "effect": "allow" },
-        { "action": "edit", "resource": "*", "effect": "deny" },
-        { "action": "subagent", "resource": "test-writer", "effect": "allow" },
-        { "action": "subagent", "resource": "implementer", "effect": "allow" },
-        { "action": "subagent", "resource": "reviewer", "effect": "allow" },
-        { "action": "edit", "resource": "*", "effect": "deny" }
-      ]
+      "permission": {
+        "question": "allow",
+        "bash": {
+          "*": "deny",
+          "pwd": "allow",
+          "ls": "allow",
+          "ls *": "allow",
+          "cat *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "grep *": "allow",
+          "rg *": "allow",
+          "git status": "allow",
+          "git status *": "allow",
+          "git diff": "allow",
+          "git diff *": "allow",
+          "git log": "allow",
+          "git log *": "allow",
+          "git show": "allow",
+          "git show *": "allow"
+        },
+        "edit": "deny",
+        "write": "deny",
+        "task": {
+          "*": "deny",
+          "test-writer": "allow",
+          "implementer": "allow",
+          "reviewer": "allow"
+        }
+      }
     },
+
     "test-writer": {
       "mode": "all",
       "prompt": "{file:agents/test-writer.md}",
-      "permissions": [
-        { "action": "question", "resource": "*", "effect": "allow" },
-        { "action": "execute", "resource": "*", "effect": "allow" },
-        { "action": "shell", "resource": "*", "effect": "allow" },
-        { "action": "subagent", "resource": "*", "effect": "deny" },
-        { "action": "edit", "resource": "backend/tests/**", "effect": "allow" },
-        { "action": "edit", "resource": "frontend/tests/**", "effect": "allow" },
-        { "action": "subagent", "resource": "*", "effect": "deny" }
-      ]
+      "permission": {
+        "question": "allow",
+        "bash": "allow",
+        "edit": {
+          "*": "deny",
+          "backend/tests/**": "allow",
+          "frontend/tests/**": "allow"
+        },
+        "write": {
+          "*": "deny",
+          "backend/tests/**": "allow",
+          "frontend/tests/**": "allow"
+        },
+        "task": "deny"
+      }
     },
+
     "implementer": {
       "mode": "all",
       "prompt": "{file:agents/implementer.md}",
-      "permissions": [
-        { "action": "question", "resource": "*", "effect": "allow" },
-        { "action": "execute", "resource": "*", "effect": "allow" },
-        { "action": "shell", "resource": "*", "effect": "allow" },
-        { "action": "edit", "resource": "backend/**", "effect": "allow" },
-        { "action": "subagent", "resource": "*", "effect": "deny" },
-        { "action": "edit", "resource": "frontend/**", "effect": "allow" },
-        { "action": "edit", "resource": "backend/tests/**", "effect": "deny" },
-        { "action": "edit", "resource": "frontend/tests/**", "effect": "deny" },
-        { "action": "subagent", "resource": "*", "effect": "deny" }
-      ]
+      "permission": {
+        "question": "allow",
+        "bash": "allow",
+        "edit": {
+          "*": "allow",
+          "backend/tests/**": "deny",
+          "frontend/tests/**": "deny"
+        },
+        "write": {
+          "*": "allow",
+          "backend/tests/**": "deny",
+          "frontend/tests/**": "deny"
+        },
+        "task": "deny"
+      }
     },
+
     "reviewer": {
       "mode": "all",
       "prompt": "{file:agents/reviewer.md}",
-      "permissions": [
-        { "action": "question", "resource": "*", "effect": "allow" },
-        { "action": "execute", "resource": "*", "effect": "allow" },
-        { "action": "shell", "resource": "*", "effect": "allow" },
-        { "action": "edit", "resource": "*", "effect": "deny" },
-        { "action": "subagent", "resource": "*", "effect": "deny" },
-        { "action": "edit", "resource": "*", "effect": "deny" },
-        { "action": "subagent", "resource": "*", "effect": "deny" }
-      ]
+      "permission": {
+        "question": "allow",
+        "bash": {
+          "*": "deny",
+          "pwd": "allow",
+          "ls": "allow",
+          "ls *": "allow",
+          "cat *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "grep *": "allow",
+          "rg *": "allow",
+          "git status": "allow",
+          "git status *": "allow",
+          "uv run pytest": "allow",
+          "uv run pytest *": "allow"
+        },
+        "edit": "deny",
+        "write": "deny",
+        "task": "deny"
+      }
     }
   }
 }
