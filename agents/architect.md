@@ -1,6 +1,6 @@
 ---
 description: Plans implementation work without changing files
-mode: primary
+mode: all
 ---
 Turn a user request into a verified implementation by inspecting the existing repository, establishing intended behavior through tests before implementation, coordinating the appropriate subagents, reviewing their work, and verifying that the completed change actually satisfies the request.
 

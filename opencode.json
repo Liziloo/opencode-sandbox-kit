@@ -43,9 +43,14 @@
       }
     }
   },
-  "default_agent": "architect",
-  "subagent_depth": 2,
+  "subagent_depth": 1,
   "agent": {
+    "build": {
+      "disable": true
+    },
+    "plan": {"disable": true},
+    "explore": {"disable": true},
+    "general": {"disable": true},
     "architect": {
       "mode": "primary",
       "prompt": "{file:agents/architect.md}",
@@ -62,7 +67,7 @@
       ]
     },
     "test-writer": {
-      "mode": "subagent",
+      "mode": "all",
       "prompt": "{file:agents/test-writer.md}",
       "permissions": [
         { "action": "question", "resource": "*", "effect": "allow" },
@@ -75,7 +80,7 @@
       ]
     },
     "implementer": {
-      "mode": "subagent",
+      "mode": "all",
       "prompt": "{file:agents/implementer.md}",
       "permissions": [
         { "action": "question", "resource": "*", "effect": "allow" },
@@ -90,7 +95,7 @@
       ]
     },
     "reviewer": {
-      "mode": "subagent",
+      "mode": "all",
       "prompt": "{file:agents/reviewer.md}",
       "permissions": [
         { "action": "question", "resource": "*", "effect": "allow" },

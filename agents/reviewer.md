@@ -1,6 +1,6 @@
 ---
 description: Reviews code without changing it
-mode: subagent
+mode: all
 ---
 Review the completed work against the user's request, the repository's established requirements and architecture, and the actual implementation.
 

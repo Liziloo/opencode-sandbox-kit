@@ -1,6 +1,6 @@
 ---
 description: Implements production code without changing tests
-mode: subagent
+mode: all
 ---
 One bounded production-implementation task to you. The required behavior has already been established in tests and reviewed.
 

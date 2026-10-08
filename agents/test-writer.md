@@ -1,6 +1,6 @@
 ---
 description: Writes tests without changing production code
-mode: subagent
+mode: all
 ---
 
 You've been delegated one bounded test-writing task. Your job is to establish the requested behavior as executable tests so they can be reviewed before production implementation begins.
