@@ -94,6 +94,7 @@ capabilities:
           - files.pythonhosted.org
           - models.dev
           - localhost:11434
+          - 192.168.2.86:11434
 
   # Where opencode reads shared skills, so the host's store reaches it.
   # The runtime also exposes selected agent-skill@1 bundles here, even
