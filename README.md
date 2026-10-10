@@ -6,20 +6,20 @@ The workload is based on Docker's published OpenCode sandbox template and repins
 
 ## What this provides
 
-* **OpenCode web UI** running inside the sandbox on port `4096`
-* **Sandboxed agent execution** with the Docker Sandbox Kit agent workload
-* Persistent OpenCode application state for each sandbox
-* Shared global OpenCode configuration and skills
-* Global agent definitions for a general coding workflow
-* Optional credential injection for:
+- **OpenCode web UI** running inside the sandbox on port `4096`
+- **Sandboxed agent execution** with the Docker Sandbox Kit agent workload
+- Persistent OpenCode application state for each sandbox
+- Shared global OpenCode configuration and skills
+- Global agent definitions for a general coding workflow
+- Optional credential injection for:
+  - GitHub
+  - OpenRouter
+  - Exa
+  - Context7
 
-  * GitHub
-  * OpenRouter
-  * Exa
-  * Context7
-* Network policy restricting sandbox egress to the services OpenCode needs
-* Local Ollama access through the Docker host
-* Automatic registration of the Sandbox Kit MCP gateway when one is provided
+- Network policy restricting sandbox egress to the services OpenCode needs
+- Local Ollama access through the Docker host
+- Automatic registration of the Sandbox Kit MCP gateway when one is provided
 
 The project deliberately keeps the **coding-agent workflow global** rather than tying the workload to a particular application repository.
 
@@ -39,9 +39,9 @@ The application repository being worked on is separate from this repository. It 
 
 You need:
 
-* Docker with Docker Sandbox / the `sbx` CLI and Sandbox Kit v3 support
-* An Ollama installation on the same machine that runs the sandbox
-* The Ollama model you want OpenCode to use
+- Docker with Docker Sandbox / the `sbx` CLI and Sandbox Kit v3 support
+- An Ollama installation on the same machine that runs the sandbox
+- The Ollama model you want OpenCode to use
 
 The workload is designed to use Ollama through Docker's host-service networking. It does **not** require the sandbox to know the host's LAN IP address.
 
@@ -81,10 +81,10 @@ This keeps the published Kit capability version and the actual OpenCode binary i
 
 The global OpenCode configuration defines a general coding workflow with four agents:
 
-* **Architect** — plans implementation work without changing files
-* **Test writer** — writes tests without changing production code
-* **Implementer** — implements production code without changing tests
-* **Reviewer** — reviews code without changing it
+- **Architect** — plans implementation work without changing files
+- **Test writer** — writes tests without changing production code
+- **Implementer** — implements production code without changing tests
+- **Reviewer** — reviews code without changing it
 
 The repository's `AGENTS.md` rules provide the general behavioral constraints shared by these agents, including inspecting the existing project before changing it, preserving working-tree changes, treating tests as part of the specification, keeping scope controlled, and reporting meaningful verification results.
 
@@ -198,13 +198,13 @@ Replace the example entries with the services you actually want OpenCode to reac
 For example, a local service listening on port `8080` at `192.168.1.100:8080` could be added as:
 
 ```yaml
-          - 192.168.1.100:8080
+- 192.168.1.100:8080
 ```
 
 A specific HTTPS host could be added as:
 
 ```yaml
-          - internal.example.com:443
+- internal.example.com:443
 ```
 
 Keep the permissions as narrow as practical: specify the actual host and port needed by the service rather than allowing an entire network when that isn't necessary.
@@ -245,13 +245,13 @@ The workload uses a restrictive runtime network policy rather than unrestricted 
 
 The public policy includes the external services required by the workload, including:
 
-* GitHub
-* OpenRouter
-* Exa
-* Context7
-* OpenCode
-* package and schema services needed by OpenCode and its tooling
-* the host Ollama service
+- GitHub
+- OpenRouter
+- Exa
+- Context7
+- OpenCode
+- package and schema services needed by OpenCode and its tooling
+- the host Ollama service
 
 Personal LAN services do not belong in the public workload. Add those through a local mixin instead.
 
@@ -263,11 +263,11 @@ This repository defines the **coding environment**, not a particular software pr
 
 The workload therefore contains:
 
-* the OpenCode installation
-* global OpenCode configuration
-* global agent definitions
-* general agent instructions
-* credentials and network capability declarations
+- the OpenCode installation
+- global OpenCode configuration
+- global agent definitions
+- general agent instructions
+- credentials and network capability declarations
 
 The project being worked on is supplied separately when the sandbox is launched.
 

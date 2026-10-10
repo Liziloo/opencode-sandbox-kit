@@ -18,5 +18,9 @@ RUN chown -R 1000:1000 /home/agent/.config/opencode/agents
 
 USER agent
 WORKDIR /home/agent/workspace
+
+# Set default Ollama URL for git / public use
+ENV OLLAMA_BASE_URL="http://host.docker.internal:11434/v1"
+
 # v2's sandbox.entrypoint.
 ENTRYPOINT ["opencode", "serve", "--hostname", "0.0.0.0", "--port", "4096"]
