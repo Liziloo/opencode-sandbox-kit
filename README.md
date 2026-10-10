@@ -1,5 +1,7 @@
 # OpenCode Sandbox Kit
 
+![OpenCode Sandbox Kit with Ollama and Architect Agent](assets/opencode-ui.png)
+
 A Docker Sandbox Kit workload for running [OpenCode](https://opencode.ai/) as a sandboxed coding agent while exposing its web interface to the host.
 
 The workload is based on Docker's published OpenCode sandbox template and repins OpenCode to the version declared by the Kit.
