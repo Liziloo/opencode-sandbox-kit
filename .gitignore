@@ -5,3 +5,6 @@
 .sbx/
 
 liz-opencode-network.yaml
+*-mixin/
+*-mixin.yaml
+local-*/

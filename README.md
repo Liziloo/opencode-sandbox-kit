@@ -39,11 +39,11 @@ The application repository being worked on is separate from this repository. It 
 
 You need:
 
-- Docker with Docker Sandbox / the `sbx` CLI and Sandbox Kit v3 support
-- An Ollama installation on the same machine that runs the sandbox
+- Docker Desktop or Docker Engine with Docker Sandbox / the `sbx` CLI and Sandbox Kit v3 support
+- An Ollama installation:
+  - **Local:** Running on the same machine as Docker (uses default host networking).
+  - **Remote:** Running on another machine on your local network (requires setting `OLLAMA_HOST` and a local mixin).
 - The Ollama model you want OpenCode to use
-
-The workload is designed to use Ollama through Docker's host-service networking. It does **not** require the sandbox to know the host's LAN IP address.
 
 ## Running the workload
 
@@ -107,129 +107,109 @@ A credential only needs to be configured when the corresponding service is neede
 
 How credentials are stored and bound is handled by Docker Sandbox Kit rather than by this repository. Do not put API keys into `opencode.json`, the workload YAML, or a committed `.env` file.
 
-## Local Ollama
+## Ollama Configuration
 
-The workload is designed to use an Ollama server running on the **Docker host**.
+The workload uses `{env:OLLAMA_HOST}` to locate the Ollama server. By default, the workload environment falls back to `http://host.docker.internal:11434`, allowing the sandbox to reach an Ollama instance running directly on the Docker host without any special setup.
 
-OpenCode inside the sandbox connects to:
+### Scenario A: Ollama running on the Docker host (Default)
 
-```text
-http://host.docker.internal:11434
-```
+If Ollama is installed locally on your machine and listening on its standard endpoint, no extra configuration is required.
 
-The workload's network policy permits the host Ollama service on port `11434`.
-
-### Default Ollama setup
-
-If Ollama is installed normally and listening on its default local endpoint, no special `OLLAMA_HOST` configuration is required.
-
-Make sure Ollama is running before starting the sandbox.
-
-For example:
+Make sure Ollama is running before starting the sandbox:
 
 ```bash
 ollama serve
 ```
 
-If Ollama is already running as a system service, simply make sure the service is running.
+The workload's default network policy permits host access, and OpenCode will automatically connect to `http://host.docker.internal:11434`.
 
-### Ollama listening on a LAN address
+### Scenario B: Ollama running on a remote LAN machine
 
-If Ollama needs to listen on a specific LAN address rather than only its default local interface, configure `OLLAMA_HOST` on the **Docker host**.
+If your Ollama server runs on a dedicated GPU box or a different machine on your local network (e.g., `192.168.1.100`), two simple steps are required:
 
-For example:
+#### 1. Set OLLAMA_HOST in your host shell
+
+Docker Sandbox Kit passes your host session's environment through to the sandbox. Export the address of your remote Ollama server before running `sbx`:
 
 ```bash
-export OLLAMA_HOST=http://192.168.2.86:11434
+export OLLAMA_HOST=http://192.168.1.100:11434
 ```
 
-Put that setting in the appropriate shell/service environment for your system if you want it to persist.
+_(Add this to your `~/.bashrc` or `~/.zshrc` to persist it)._
 
-The important point is that the IP address belongs to **Ollama's host-side configuration**. You do not put that IP into `opencode-workload.yaml` or `opencode.json`.
+#### 2. Create a local network mixin
 
-The sandbox continues to reach the host service through:
+Docker Sandbox Kit enforces a default-deny network policy. Because the remote machine is not the Docker host, you must grant the sandbox permission to reach that specific LAN IP and port.
 
-```text
-http://host.docker.internal:11434
-```
-
-This keeps the workload independent of the particular LAN address used by the host.
-
-## Adding your own host network access
-
-The public workload deliberately does not contain access to arbitrary machines on the author's LAN.
-
-If you need OpenCode to reach another service on your own network — for example, a local ComfyUI server, a NAS, a development server, or an internal website — create a **local mixin** containing your additional network permissions.
-
-Docker Sandbox Kit v3 mixins are overlays that compose onto a workload. Multiple mixins can be used, and their network policies are combined during composition.
-
-### Example personal network mixin
-
-Create a file such as:
-
-```text
-liz-opencode-network.yaml
-```
-
-with:
+Create a local mixin file (for example, `local-network-mixin.yaml`):
 
 ```yaml
 # syntax=docker/sandbox-kit:3
-
 schemaVersion: "3"
-
 kind: mixin
-
-displayName: My OpenCode Network
-
-description: Personal network access for local OpenCode services
+displayName: Local Network Access
+description: Allows egress to private LAN services like remote Ollama
 
 capabilities:
   - type: com.docker.sandbox/network-policy@1
     config:
       runtime:
         allow:
-          - 192.168.1.100:8188
-          - "*.example.com:443"
+          - 192.168.1.100:11434
 ```
 
-Replace the example entries with the services you actually want OpenCode to reach.
+Replace `192.168.1.100:11434` with your remote server's actual IP and port.
 
-For example, a local service listening on port `8080` at `192.168.1.100:8080` could be added as:
+#### 3. Ignore your mixin in Git
 
-```yaml
-- 192.168.1.100:8080
-```
-
-A specific HTTPS host could be added as:
-
-```yaml
-- internal.example.com:443
-```
-
-Keep the permissions as narrow as practical: specify the actual host and port needed by the service rather than allowing an entire network when that isn't necessary.
-
-### Keep your mixin local
-
-If you keep your personal mixin in this repository but do not want it published, add its filename to `.gitignore`:
+Keep your private network topography out of the public git history by adding the mixin to `.gitignore`:
 
 ```gitignore
-liz-opencode-network.yaml
+local-network-mixin.yaml
 ```
 
-This lets you maintain one working checkout while keeping your personal network permissions out of the public repository.
+#### 4. Launch the sandbox with the mixin
 
-### Run with the mixin
-
-Compose the mixin onto the workload when launching the sandbox:
+Pass `--kit` when running `sbx` to compose your local network policy onto the workload:
 
 ```bash
-sbx run . --kit ./liz-opencode-network.yaml /path/to/your/project
+sbx run . --kit ./local-network-mixin.yaml /path/to/your/project
 ```
 
-The workload remains the main Kit; the mixin simply adds your additional network permissions.
+The sandbox will inherit your `OLLAMA_HOST` environment variable, OpenCode will connect directly to `http://192.168.1.100:11434/v1`, and the mixin will permit the traffic through the sandbox firewall.
 
-You can create additional mixins for other personal requirements instead of modifying the public workload itself. A mixin can be declaration-only, so a network-only mixin does not need its own Dockerfile.
+### Workflow tip: Avoid passing `--kit` every time with `sbx env`
+
+If you use a local mixin or run OpenCode frequently, you can save your kit composition into an `sbx` environment so you don't have to pass flags manually every time.
+
+Create an environment that pairs the workload with your mixin:
+
+```bash
+sbx env create opencode . --kit ./local-network-mixin.yaml
+```
+
+Once created, you can launch a named sandbox in any workspace with just:
+
+```bash
+sbx env run opencode --name opencode-workload-agents-test28 /path/to/your/project
+```
+
+## Adding access to other local services
+
+You can expand the same mixin to permit access to any other local or self-hosted services that your coding agent needs to query (e.g., ComfyUI, a local database, or an internal documentation server).
+
+Simply add the host and port under `allow` in your mixin:
+
+```yaml
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - 192.168.1.100:11434 # Remote Ollama
+          - 192.168.1.100:8188 # Local ComfyUI
+          - "*.internal.lan:443" # Local domain
+```
 
 ## MCP
 
@@ -294,7 +274,7 @@ sbx run . /path/to/your/project
 To compose a local mixin:
 
 ```bash
-sbx run . --kit ./liz-opencode-network.yaml /path/to/your/project
+sbx run . --kit ./local-network-mixin.yaml /path/to/your/project
 ```
 
 A mixin cannot run by itself; it is composed onto a workload.
