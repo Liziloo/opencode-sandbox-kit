@@ -1,0 +1,26 @@
+# syntax=docker/sandbox-kit:3
+
+schemaVersion: "3"
+
+kind: mixin
+
+displayName: Local Network Access
+
+description: >-
+  Template mixin providing sandbox egress to private LAN services,
+  such as a remote Ollama server. Copy this to local-network-mixin.yaml
+  and edit the IP addresses for your personal environment.
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          # Remote Ollama server (replace 192.168.1.100 with your server's LAN IP)
+          - 192.168.1.100:11434
+
+          # Optional: Local ComfyUI or other inference servers
+          # - 192.168.1.100:8188
+
+          # Optional: Internal documentation or self-hosted services
+          # - "*.internal.lan:443"
